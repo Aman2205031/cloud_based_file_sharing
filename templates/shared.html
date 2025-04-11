@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container">
+    <h1 class="title">📂 Shared Files</h1>
+
+    <!-- 🔍 Search Bar -->
+    <div class="search-container">
+        <input type="text" id="searchBar" placeholder="🔍 Search files..." onkeyup="searchFiles()">
+        
+        <!-- 📅 Sort Options -->
+        <label for="sort">Sort By:</label>
+        <select id="sort" onchange="sortFiles()">
+            <option value="latest">📅 Latest</option>
+            <option value="oldest">📆 Oldest</option>
+        </select>
+    </div>
+
+    <table id="filesTable">
+        <thead>
+            <tr>
+                <th>📤 Sender</th>
+                <th>📝 Message</th>
+                <th>📅 Timestamp</th>
+                <th>📥 Download</th>
+                <th>🔄 Reshare</th>
+                <th>🗑️ Delete</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for sender, message, timestamp in shared_files %}
+            <tr>
+                <td>{{ sender }}</td>
+                <td>{{ message }}</td>
+                <td class="timestamp">{{ timestamp }}</td>
+                <td><button class="download-btn" onclick="downloadFile('{{ message }}')">📥 Download</button></td>
+                <td><button class="reshare-btn" onclick="reshareFile('{{ sender }}', '{{ message }}')">🔄 Reshare</button></td>
+                <td><button class="delete-btn" onclick="deleteFile('{{ message }}')">🗑️ Delete</button></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <p id="responseMessage"></p>
+</div>
+
+<style>
+    /* 🔹 Container Styling */
+    .container {
+        max-width: 900px;
+        margin: auto;
+        text-align: center;
+        padding: 20px;
+    }
+
+    .title {
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 15px;
+    }
+
+    /* 🔹 Search & Sort Bar */
+    .search-container {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 15px;
+    }
+
+    input, select {
+        padding: 8px;
+        font-size: 14px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+    }
+
+    /* 🔹 Table Styling */
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+
+    th, td {
+        padding: 10px;
+        border: 1px solid #ddd;
+        text-align: center;
+    }
+
+    th {
+        background-color: #007bff;
+        color: white;
+    }
+
+    tbody tr:hover {
+        background-color: #f1f1f1;
+    }
+
+    /* 🔹 Button Styling */
+    .download-btn, .reshare-btn, .delete-btn {
+        padding: 8px 12px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    .download-btn { background-color: #28a745; color: white; }
+    .reshare-btn { background-color: #ffc107; color: black; }
+    .delete-btn { background-color: #dc3545; color: white; }
+
+    .download-btn:hover { background-color: #218838; }
+    .reshare-btn:hover { background-color: #e0a800; }
+    .delete-btn:hover { background-color: #c82333; }
+
+</style>
+
+<script>
+// 🔍 Search Function
+function searchFiles() {
+    let input = document.getElementById("searchBar").value.toLowerCase();
+    let rows = document.querySelectorAll("#filesTable tbody tr");
+    rows.forEach(row => {
+        let text = row.innerText.toLowerCase();
+        row.style.display = text.includes(input) ? "" : "none";
+    });
+}
+
+// 📅 Sorting Function
+function sortFiles() {
+    let table = document.getElementById("filesTable").getElementsByTagName("tbody")[0];
+    let rows = Array.from(table.rows);
+    let sortBy = document.getElementById("sort").value;
+    
+    rows.sort((a, b) => {
+        let dateA = new Date(a.querySelector(".timestamp").innerText);
+        let dateB = new Date(b.querySelector(".timestamp").innerText);
+        return sortBy === "latest" ? dateB - dateA : dateA - dateB;
+    });
+
+    table.innerHTML = "";
+    rows.forEach(row => table.appendChild(row));
+}
+
+// 📥 Download File Function
+function downloadFile(filename) {
+    window.location.href = "/download/" + filename;
+}
+
+// 🔄 Reshare File Function
+function reshareFile(sender, filename) {
+    let email = prompt("Enter recipient email:");
+    if (!email) return;
+    
+    fetch("/share_file", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email, filename: filename })
+    })
+    .then(response => response.json())
+    .then(data => document.getElementById("responseMessage").innerText = data.message);
+}
+
+// 🗑️ Delete File Function
+function deleteFile(filename) {
+    if (!confirm("Are you sure you want to delete this file?")) return;
+    
+    fetch("/delete/" + filename, { method: "DELETE" })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById("responseMessage").innerText = data.message;
+        location.reload();
+    });
+}
+</script>
+{% endblock %}

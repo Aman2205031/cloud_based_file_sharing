@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>📁 All Files</h1>
+
+<input type="text" id="searchBar" placeholder="🔍 Search files..." onkeyup="searchFiles()">
+<table id="filesTable">
+    <thead>
+        <tr>
+            <th>📄 Filename</th>
+            <th>📅 Date Uploaded</th>
+            <th>📥 Download</th>
+            <th>⭐ Favorite</th>
+            <th>🔒 Make Private</th>
+            <th>🗑 Delete</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for file in all_files %}
+        <tr>
+            <td>{{ file.filename }}</td>
+            <td class="timestamp">{{ file.uploaded_at }}</td>
+            <td><button onclick="downloadFile('{{ file.filename }}')">📥 Download</button></td>
+            <td><button onclick="addToFavorites('{{ file.filename }}')">⭐ Favorite</button></td>
+            <td><button onclick="makePrivate('{{ file.filename }}')">🔒 Private</button></td>
+            <td><button onclick="deleteFile('{{ file.filename }}')">🗑 Delete</button></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<script>
+function searchFiles() {
+    let input = document.getElementById("searchBar").value.toLowerCase();
+    document.querySelectorAll("#filesTable tbody tr").forEach(row => {
+        let text = row.innerText.toLowerCase();
+        row.style.display = text.includes(input) ? "" : "none";
+    });
+}
+
+function downloadFile(filename) {
+    window.location.href = "/download/" + filename;
+}
+
+function addToFavorites(filename) {
+    fetch("/favorite/" + filename, { method: "POST" }).then(() => location.reload());
+}
+
+function makePrivate(filename) {
+    fetch("/private/" + filename, { method: "POST" }).then(() => location.reload());
+}
+
+function deleteFile(filename) {
+    if (confirm("Are you sure you want to delete this file?")) {
+        fetch("/delete/" + filename, { method: "DELETE" }).then(() => location.reload());
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <style>
+        body {
+            display: flex;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        .sidebar {
+            width: 220px;
+            background-color: #333;
+            color: white;
+            height: 100vh;
+            padding: 20px;
+            position: fixed;
+            left: 0;
+            top: 0;
+        }
+        .sidebar a {
+            color: white;
+            text-decoration: none;
+            display: block;
+            padding: 12px;
+            margin: 5px 0;
+            border-radius: 5px;
+        }
+        .sidebar a:hover {
+            background-color: #575757;
+        }
+        .content {
+            margin-left: 250px;
+            padding: 20px;
+            width: 100%;
+        }
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 10px 20px 10px;
+            background-color: #f9f9f9;
+            border-bottom: 1px solid #ccc;
+            position: sticky;
+            top: 0;
+            z-index: 999;
+        }
+        .icon-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        .icon-btn img {
+            width: 24px;
+            height: 24px;
+        }
+        .profile-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            margin-left: 10px;
+        }
+        .file-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f4f4f4;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+        }
+        .file-icon-name {
+            display: flex;
+            align-items: center;
+        }
+        .file-icon {
+            width: 32px;
+            margin-right: 10px;
+        }
+        .btn {
+            padding: 6px 12px;
+            margin: 0 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .btn.blue { background-color: #3498db; color: white; }
+        .btn.orange { background-color: #FFA500; color: white; }
+        .btn.red { background-color: #e74c3c; color: white; }
+        .btn:hover { opacity: 0.9; }
+        .search-input {
+            padding: 6px 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+   
+    <div class="sidebar" id="sidebar">
+        <h2>☁️ Cloud Storage</h2>
+        <a href="/dashboard">📂 My Cloud</a>
+        <a href="/logout">🚪 Logout</a>
+    </div>
+
+  
+    <div class="content">
+     
+        <div class="topbar">
+            <div class="topbar-left">
+                <button class="icon-btn" onclick="toggleSidebar()">
+                    <img src="https://img.icons8.com/ios-filled/24/menu--v1.png" alt="Toggle Sidebar" />
+                </button>
+            </div>
+            <div class="topbar-right">
+                <input type="text" placeholder="Search files..." class="search-input" id="searchBox">
+                <img src="https://img.icons8.com/fluency/48/user-male-circle.png" class="profile-avatar" alt="Profile" />
+            </div>
+        </div>
+
+        <h2>Welcome, {{ username }} 👋</h2>
+
+        
+        <form id="upload-form" enctype="multipart/form-data">
+            <input type="file" name="file" id="file-input" required>
+            <button type="submit">📤 Upload</button>
+        </form>
+        <div id="upload-message"></div>
+
+    
+        <div class="file-list" id="fileList">
+            {% for file in files %}
+            <div class="file-card" id="file-{{ file.filename|replace(' ', '_') }}">
+                <div class="file-icon-name">
+                    <img src="https://img.icons8.com/fluency/48/file.png" class="file-icon" alt="File Icon" />
+                    <span class="file-name">{{ file.filename }}</span>
+                </div>
+                <div class="file-actions">
+                    <button class="btn blue" onclick="downloadFile('{{ file.filename }}')">Download</button>
+                    <button class="btn red" onclick="deleteFile('{{ file.filename|replace(' ', '_') }}', '{{ file.filename }}')">Delete</button>
+                    <button class="btn btn-primary share-btn" data-filename="{{ file.filename }}">🔗 Share</button> <!-- Added Share Button -->
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- JS -->
+    <script>
+        // Upload file
+        document.getElementById('upload-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const fileInput = document.getElementById('file-input');
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                const msg = document.getElementById('upload-message');
+                if (data.success) {
+                    msg.textContent = '✅ File uploaded successfully!';
+                    msg.style.color = 'green';
+                    location.reload();
+                } else {
+                    msg.textContent = `❌ ${data.error}`;
+                    msg.style.color = 'red';
+                }
+            })
+            .catch(error => {
+                alert("❌ Upload error");
+                console.error(error);
+            });
+        });
+
+        // Delete file
+        function deleteFile(cardId, filename) {
+            if (confirm(`Are you sure you want to delete "${filename}"?`)) {
+                fetch(`/delete/${filename}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message || 'Deleted!');
+                    document.getElementById(`file-${cardId}`).remove();
+                })
+                .catch(err => {
+                    alert('❌ Error deleting file');
+                    console.error(err);
+                });
+            }
+        }
+
+        // Download file
+        function downloadFile(filename) {
+            fetch(`/download/${filename}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.file_url) {
+                        window.open(data.file_url, '_blank');
+                    } else {
+                        alert("❌ Download failed.");
+                    }
+                })
+                .catch(err => {
+                    alert("❌ Error downloading file");
+                    console.error(err);
+                });
+        }
+
+        // Share file
+        function shareFile(filename) {
+            const recipient = prompt("Enter username to share with:");
+            if (recipient) {
+                fetch("/share", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ filename, recipient })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message || data.error);
+                })
+                .catch(error => {
+                    alert("❌ Error sharing file");
+                    console.error(error);
+                });
+            }
+        }
+
+        // Generate Share Link
+        function generateShareLink(filename) {
+            fetch(`/generate_share_link/${filename}`)
+                .then(res => res.json())
+                .then(data => {
+                    const shareUrl = data.share_url;
+                    prompt("🔗 Copy and share this link:", shareUrl);
+                })
+                .catch(err => {
+                    alert("❌ Failed to generate share link");
+                    console.error(err);
+                });
+        }
+
+        // Sidebar Toggle
+        function toggleSidebar() {
+            const sidebar = document.getElementById("sidebar");
+            sidebar.style.display = (sidebar.style.display === "none") ? "block" : "none";
+        }
+
+        // File Search
+        document.getElementById("searchBox").addEventListener("input", function () {
+            const searchTerm = this.value.toLowerCase();
+            const files = document.querySelectorAll(".file-card");
+            files.forEach(card => {
+                const fileName = card.querySelector(".file-name").textContent.toLowerCase();
+                card.style.display = fileName.includes(searchTerm) ? "flex" : "none";
+            });
+        });
+
+        // Share button functionality
+        document.querySelectorAll(".share-btn").forEach(btn => {
+            btn.addEventListener("click", function () {
+                const filename = this.dataset.filename;
+
+                fetch(`/generate_share_link/${filename}`)
+                    .then(res => {
+                        if (!res.ok) throw new Error("Failed to generate link");
+                        return res.json();
+                    })
+                    .then(data => {
+                        navigator.clipboard.writeText(data.share_url);
+                        alert("✅ Share link copied to clipboard!");
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        alert("❌ Failed to generate share link.");
+                    });
+            });
+        });
+    </script>
+</body>
+</html>

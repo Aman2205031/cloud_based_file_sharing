@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>⭐ Favorite Files</h1>
+
+<table>
+    <thead>
+        <tr>
+            <th>📄 Filename</th>
+            <th>📥 Download</th>
+            <th>❌ Remove from Favorites</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for file in favorite_files %}
+        <tr>
+            <td>{{ file.filename }}</td>
+            <td><button onclick="downloadFile('{{ file.filename }}')">📥 Download</button></td>
+            <td><button onclick="removeFromFavorites('{{ file.filename }}')">❌ Remove</button></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<script>
+function downloadFile(filename) {
+    window.location.href = "/download/" + filename;
+}
+
+function removeFromFavorites(filename) {
+    fetch("/favorite/" + filename, { method: "DELETE" }).then(() => location.reload());
+}
+</script>
+{% endblock %}

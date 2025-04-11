@@ -1,0 +1,8 @@
+flask
+flask_sqlalchemy
+flask_login
+flask_bcrypt
+flask_mail
+python-dotenv
+authlib
+azure-storage-blob

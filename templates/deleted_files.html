@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>🗑 Deleted Files (Recycle Bin)</h1>
+
+<table>
+    <thead>
+        <tr>
+            <th>📄 Filename</th>
+            <th>♻ Restore</th>
+            <th>❌ Permanently Delete</th>
+        </tr>
+    </thead>
+    <tbody>
+  {% for file in files %}
+  <tr id="file-{{ file.filename }}">
+    <td>{{ file.filename }}</td>
+    <td>
+      <a href="{{ file.url }}" target="_blank" class="btn btn-sm btn-primary">Download</a>
+      <button onclick="deleteFile('{{ file.filename }}')" class="btn btn-sm btn-danger">Delete</button>
+    </td>
+  </tr>
+  {% endfor %}
+</tbody>
+</table>
+
+<script>
+function restoreFile(filename) {
+    fetch("/restore/" + filename, { method: "POST" }).then(() => location.reload());
+}
+
+function permanentlyDelete(filename) {
+    if (confirm("This action cannot be undone. Delete forever?")) {
+        fetch("/delete_forever/" + filename, { method: "DELETE" }).then(() => location.reload());
+    }
+}
+</script>
+{% endblock %}

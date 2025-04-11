@@ -1,0 +1,54 @@
+{% extends "dashboard.html" %}
+<link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+
+
+{% block content %}
+<div class="container">
+    <h2>📩 Inbox</h2>
+    <a href="/dashboard">🏠 Back to Dashboard</a>
+
+    <!-- Message Sending Form -->
+    <form id="messageForm">
+        <label for="receiver">To (Username):</label>
+        <input type="text" id="receiver" name="receiver" required>
+
+        <label for="message">Message:</label>
+        <textarea id="message" name="message" required></textarea>
+
+        <button type="submit">Send</button>
+    </form>
+
+    <div id="messageStatus"></div>
+
+    <!-- Messages List -->
+    <h3>📨 Received Messages:</h3>
+    <ul>
+        {% for sender, message, timestamp in messages %}
+        <li><strong>{{ sender }}</strong>: {{ message }} <small>({{ timestamp }})</small></li>
+        {% endfor %}
+    </ul>
+</div>
+
+<script>
+document.getElementById("messageForm").onsubmit = async function(event) {
+    event.preventDefault();
+
+    const receiver = document.getElementById("receiver").value;
+    const message = document.getElementById("message").value;
+
+    const response = await fetch("/send_message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ receiver, message })
+    });
+
+    const result = await response.json();
+    document.getElementById("messageStatus").innerText = result.message;
+
+    if (response.ok) {
+        document.getElementById("receiver").value = "";
+        document.getElementById("message").value = "";
+    }
+};
+</script>
+{% endblock %}

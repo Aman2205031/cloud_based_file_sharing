@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud File Sharing</title>
+    <style>
+
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 50px;
+        }
+        #fileList {
+            margin-top: 20px;
+        }
+        .file-item {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Upload a File</h2>
+    <input type="file" id="fileInput">
+    <button onclick="uploadFile()">Upload</button>
+
+    <h3>Uploaded Files</h3>
+    <div id="fileList"></div>
+
+    <script>
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            if (!fileInput.files.length) {
+                alert("Please select a file!");
+                return;
+            }
+
+            let formData = new FormData();
+            formData.append("file", fileInput.files[0]);
+
+            let response = await fetch("/upload", {
+                method: "POST",
+                body: formData
+            });
+
+            let result = await response.json();
+            if (result.file_url) {
+                alert("File uploaded successfully!");
+                loadFiles(); // Refresh file list
+            } else {
+                alert("Error uploading file.");
+            }
+        }
+
+        async function loadFiles() {
+            let response = await fetch("/files");
+            let files = await response.json();
+            
+            let fileList = document.getElementById("fileList");
+            fileList.innerHTML = "";
+            
+            files.forEach(file => {
+                let div = document.createElement("div");
+                div.className = "file-item";
+                div.innerHTML = `<a href="${file}" target="_blank">${file}</a>`;
+                fileList.appendChild(div);
+            });
+        }
+
+        loadFiles(); // Load files on page load
+    </script>
+
+</body>
+</html>
